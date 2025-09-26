@@ -1,33 +1,56 @@
-Secure Code Assistant (VS Code Extension)
-A lightweight VS Code extension that enriches prompts with a security checklist, scans code for insecure patterns using Semgrep, provides inline diagnostics with one‑click fixes, and automatically rescans after applying fixes.
+# Secure Code Assistant (VS Code Extension)
+A lightweight VS Code extension that flags common insecure patterns with Semgrep, shows inline diagnostics, offers one‑click fixes, and targets fast feedback during development.
 
-Highlights
-Prompt Enricher webview to append a security checklist to developer prompts.
+**Highlights**
+Prompt Enricher panel to append a security checklist to prompts for safer code generation.
 
-Scans on open, save, and debounced edits for JS/TS/JSON files.
+On‑open, on‑save, and debounced on‑change scanning for JS/TS/JSON.
 
-Focus detections: hardcoded secrets, missing authorization checks, and outdated dependencies in package.json.
+**Focus detections:**
 
-Quick fixes for common issues (env secrets, auth middleware, eval removal, HTTPS, parameterized SQL, MongoDB filters).
+Hardcoded secrets (e.g., API keys in code).
 
-Automatic rescan after fixes to confirm resolution.
+Missing authorization checks on routes/controllers (e.g., Express routes without role validation).
 
-Requirements
+Outdated/vulnerable dependencies via package.json (simulation supported).
+
+**One‑click quick fixes:**
+
+Replace hardcoded secret with process.env usage.
+
+Inject role‑based middleware into Express routes.
+
+Replace eval with a safe parsing placeholder.
+
+Switch http to https in simple string cases.
+
+Convert concatenated SQL to parameterized query skeleton.
+
+Replace MongoDB $where with explicit field filters.
+
+**Current Status and Known Gaps**
+Prompt Enrichment: Implemented as a basic webview that appends a standard security checklist, but it is not fully robust; CSP hardening and UX polish are pending.
+
+Rescan After Fix: Intended to auto‑rescan after applying a quick fix; currently attempted but may not consistently trigger or confirm resolution in all cases.
+
+Language Coverage: Currently supports only JavaScript, TypeScript, and JSON; designed to be extensible to other languages in future updates.
+
+**Requirements**
 VS Code 1.70+
 
 Node.js and npm
 
-Semgrep CLI installed and available on PATH
+Semgrep CLI available on PATH
 
-Semgrep rules YAML for:
+Semgrep rules (YAML) including:
 
 Secrets detection
 
-Missing authorization in Express routes
+Missing authorization (Express routes)
 
-Outdated/vulnerable dependencies (package.json)
+Outdated/vulnerable dependency checks for package.json
 
-Setup
+**Setup**
 Clone and install
 
 git clone https://github.com/Rahul-bit-coder/CognitivetrustAssignment
@@ -44,67 +67,79 @@ Configure rules
 
 Place or reference a Semgrep rules YAML (e.g., hardcoded-secrets.yml).
 
-In src/extension.ts, set RULES_PATH to its absolute path (temporary; will be user-configurable later).
+In src/extension.ts, set the RULES_PATH to the absolute path for the rules file (temporary approach).
 
 Launch the extension
 
-Press F5 in VS Code to open the Extension Development Host.
+Open the project in VS Code and press F5 to start the Extension Development Host.
 
 Verify Semgrep
 
-semgrep --version should work in a terminal used by VS Code.
+semgrep --version should work in a terminal that VS Code can use.
 
 Usage
 Scanning
 
-Open a JS/TS/JSON file and save or type; scans run on open/save and debounced on change.
+Open a JS/TS/JSON file; scans run on open and save, and are debounced on edit for performance.
 
-Diagnostics appear inline and in the Problems panel; check the “Secure Code Assistant” output channel for commands/logs.
+Findings appear inline and in the Problems panel; the “Secure Code Assistant” output channel shows the Semgrep command and logs.
 
-Quick fixes
+**Quick fixes**
 
-Use the lightbulb menu for suggested fixes; after applying, the extension rescans the file automatically.
+Use the lightbulb on diagnostics to apply suggested fixes; the extension aims to rescan after fix to validate resolution (see Current Status).
 
 Prompt Enricher
 
-Command: “Secure Code Assistant: Enrich Prompt” opens the webview.
+Run command: “Secure Code Assistant: Enrich Prompt” to open the panel.
 
-Paste a prompt and click Enrich to append the security checklist, then copy the enriched prompt.
+Paste a prompt and click Enrich to append the security checklist; copy the enriched prompt for use.
 
-Implemented Features (mapping to assignment)
-VS Code plugin basics: Activation on open/save/change, diagnostics, output channel.
+What’s Implemented (Assignment Mapping)
+VS Code plugin basics: Activation on open/save/change, diagnostics surfaced in Problems, and an output channel.
 
-Prompt enrichment: Webview adds a curated secure-coding checklist to any prompt.
+Prompt enrichment: A webview that appends a secure‑coding checklist to prompts (basic implementation; see gaps).
 
-Semgrep integration: Runs semgrep --json and maps findings to diagnostics.
+Semgrep integration: Runs Semgrep with JSON output, parses findings, and maps to diagnostics.
 
-Auto-rewrite/suggestions: One‑click code actions for insecure patterns.
+Fix suggestions: Contextual quick fixes for secrets, missing auth, eval, http->https, SQL parameterization, and MongoDB $where.
 
-Inline/popup suggestions: Diagnostics UI plus messages on errors.
+Rescan after fix: Mechanism attempted to re‑run scan post‑fix, but may not always confirm resolution (see gaps).
 
-Rescan after fix: Triggers a rescan to verify the issue is resolved.
+Limitations
+Prompt Enricher hardening: Uses inline script and lacks a strict CSP/nonce; needs refactor to external script, nonce, and CSP with webview.cspSource.
 
-Current Limitations
-Prompt Enricher is basic; needs CSP hardening (nonce + webview.cspSource) and moving inline scripts to an external file.
+Rescan reliability: Post‑fix rescans are not guaranteed in all edge cases; needs more robust triggering and state handling.
 
-Rules path is hardcoded; should be exposed as a user/workspace setting (secagent.rulesPath) with file picker and workspace‑relative support.
+Configurability: RULES_PATH is hardcoded; should be a workspace/user setting with file‑picker and workspace‑relative support.
 
-Semgrep exit codes and stderr warnings should be handled more robustly (parse JSON even if exitCode != 0).
+Semgrep edge cases: Exit codes and stderr warnings should be handled so that valid JSON findings do not get discarded.
 
-The scanner focuses on JS/TS/JSON today; can be extended to Python, Java, etc., by adding language IDs and rules.
+Language scope: Currently only JS/TS/JSON; extending to Python, Java, etc., will require language IDs, activation events, and rules.
 
 Roadmap
-Settings: rules path, semgrep path, scan on save/open toggles, debounce ms.
+Settings
 
-“Scan workspace” and “Scan dependencies” commands; recognize active package.json automatically.
+secagent.rulesPath, secagent.semgrepPath, scanOnSave/open toggles, and changeDebounceMs.
 
-Webview security: strict CSP, nonce, external script, and improved UX (copy toast, history).
+Webview security
 
-Findings view: a tree view to filter by file/severity/rule and jump to locations.
+Strict CSP + nonce; move inline script to external file; add copy feedback and optional prompt history.
 
-Language extensions: add Python (requirements.txt), Java (pom.xml/gradle), and framework‑specific rules and fixes.
+Scanning commands
 
-Tests: integration tests for diagnostic mapping and code actions using vscode-test with mocked Semgrep JSON.
+“Scan workspace” and “Scan dependencies,” and auto‑recognize active package.json for dependency checks.
+
+Diagnostics UX
+
+Related info, rule links, consistent severity mapping, and a tree view to filter by severity/file/rule.
+
+Language extensions
+
+Add Python (requirements.txt), Java (pom/gradle), and framework‑specific rules with tailored fixes.
+
+Tests
+
+Integration tests for diagnostic mapping and code actions using mocked Semgrep JSON.
 
 Scripts
 Build: npm run compile
@@ -114,8 +149,5 @@ Watch: npm run watch
 Prepublish: npm run vscode:prepublish
 
 Contributing
-Issues and PRs are welcome. Please include steps to reproduce, sample code, and the Semgrep rule if applicable.
-
-
-
+Issues and PRs are welcome. Include sample code, the Semgrep rule or pattern, and exact steps to reproduce.
 
